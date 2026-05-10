@@ -3,18 +3,15 @@
   "id": "chunkswap",
   "version": "1.0.0",
   "name": "ChunkSwap",
-  "description": "Random chunk swap challenge mod for Divinxxii. Every N seconds, the chunk under you gets replaced with a random chunk from somewhere else in the world.",
+  "description": "Random chunk swap challenge mod for Divinxxii.",
   "authors": ["Divinxxii"],
-  "contact": {
-    "homepage": "https://www.youtube.com/@Divinxxii"
-  },
   "license": "MIT",
-  "icon": "assets/chunkswap/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": ["com.divinxxii.chunkswap.ChunkSwapMod"],
     "client": ["com.divinxxii.chunkswap.client.ChunkSwapClient"]
   },
+  "mixins": [],
   "depends": {
     "fabricloader": ">=0.15.0",
     "fabric-api": "*",
