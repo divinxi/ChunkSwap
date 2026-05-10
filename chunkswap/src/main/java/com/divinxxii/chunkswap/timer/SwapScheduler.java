@@ -6,13 +6,15 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 public class SwapScheduler {
 
     private boolean running = false;
-    private int intervalTicks = 0;   // interval in ticks (20 ticks = 1 second)
+    private int intervalTicks = 0;
     private int ticksRemaining = 0;
 
     public SwapScheduler() {
@@ -47,13 +49,14 @@ public class SwapScheduler {
 
         ticksRemaining--;
 
-        // Warning sounds at 3, 2, 1
         int secondsLeft = getSecondsRemaining();
         if (ticksRemaining % 20 == 0 && secondsLeft <= 3 && secondsLeft > 0) {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                player.playSound(
-                    net.minecraft.sound.SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(),
-                    net.minecraft.sound.SoundCategory.PLAYERS,
+                player.getWorld().playSound(
+                    null,
+                    player.getBlockPos(),
+                    SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(),
+                    SoundCategory.PLAYERS,
                     1.0f,
                     0.5f + (0.5f * (3 - secondsLeft))
                 );
