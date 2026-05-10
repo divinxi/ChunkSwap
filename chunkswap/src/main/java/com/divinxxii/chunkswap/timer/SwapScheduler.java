@@ -3,6 +3,7 @@ package com.divinxxii.chunkswap.timer;
 import com.divinxxii.chunkswap.ChunkSwapMod;
 import com.divinxxii.chunkswap.util.ChunkSwapper;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -31,35 +32,29 @@ public class SwapScheduler {
         this.running = false;
     }
 
-    public boolean isRunning() {
-        return running;
-    }
-
-    public int getIntervalSeconds() {
-        return intervalTicks / 20;
-    }
-
-    public int getSecondsRemaining() {
-        return (int) Math.ceil(ticksRemaining / 20.0);
-    }
+    public boolean isRunning() { return running; }
+    public int getSecondsRemaining() { return (int) Math.ceil(ticksRemaining / 20.0); }
 
     private void onServerTick(MinecraftServer server) {
-        if (!running) return;
         if (server.getPlayerManager().getPlayerList().isEmpty()) return;
 
+        // Send HUD update every 20 ticks (1 second)
+        if (server.getTicks() % 20 == 0) {
+            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                ServerPlayNetworking.send(player,
+                    new ChunkSwapMod.TimerPayload(getSecondsRemaining(), !running));
+            }
+        }
+
+        if (!running) return;
         ticksRemaining--;
 
         int secondsLeft = getSecondsRemaining();
         if (ticksRemaining % 20 == 0 && secondsLeft <= 3 && secondsLeft > 0) {
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                player.getWorld().playSound(
-                    null,
-                    player.getBlockPos(),
+                player.getWorld().playSound(null, player.getBlockPos(),
                     SoundEvents.BLOCK_NOTE_BLOCK_PLING.value(),
-                    SoundCategory.PLAYERS,
-                    1.0f,
-                    0.5f + (0.5f * (3 - secondsLeft))
-                );
+                    SoundCategory.PLAYERS, 1.0f, 0.5f + (0.5f * (3 - secondsLeft)));
             }
         }
 
@@ -73,14 +68,9 @@ public class SwapScheduler {
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             ServerWorld world = player.getServerWorld();
             boolean success = ChunkSwapper.swapChunk(player, world);
-
             if (success) {
                 player.sendMessage(
-                    Text.literal("⚡ Chunk swapped!").formatted(Formatting.GREEN, Formatting.BOLD),
-                    true
-                );
-            } else {
-                ChunkSwapMod.LOGGER.warn("[ChunkSwap] Swap failed for player {}", player.getName().getString());
+                    Text.literal("⚡ Chunk swapped!").formatted(Formatting.GREEN, Formatting.BOLD), true);
             }
         }
     }
