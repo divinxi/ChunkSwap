@@ -1,45 +1,52 @@
-package com.divinxxii.chunkswap;
+package com.divinxxii.chunkswap.client;
 
-import com.divinxxii.chunkswap.command.ChunkSwapCommand;
-import com.divinxxii.chunkswap.timer.SwapScheduler;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import net.minecraft.network.codec.PacketCodec;
+import com.divinxxii.chunkswap.ChunkSwapMod;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.render.RenderTickCounter;
 
-public class ChunkSwapMod implements ModInitializer {
+@Environment(EnvType.CLIENT)
+public class ChunkSwapClient implements ClientModInitializer {
 
-    public static final String MOD_ID = "chunkswap";
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static SwapScheduler scheduler;
-
-    public static final CustomPayload.Id<TimerPayload> TIMER_PACKET_ID =
-        new CustomPayload.Id<>(Identifier.of(MOD_ID, "timer"));
-
-    public record TimerPayload(int seconds, boolean paused) implements CustomPayload {
-        public static final PacketCodec<net.minecraft.network.PacketByteBuf, TimerPayload> CODEC =
-            PacketCodec.tuple(
-                PacketCodecs.INTEGER, TimerPayload::seconds,
-                PacketCodecs.BOOL, TimerPayload::paused,
-                TimerPayload::new
-            );
-        @Override public CustomPayload.Id<TimerPayload> getId() { return TIMER_PACKET_ID; }
-    }
+    // These are updated via network packet or reflected from server state
+    public static boolean hudVisible = false;
+    public static boolean paused = false;
+    public static int secondsRemaining = 0;
 
     @Override
-    public void onInitialize() {
-        scheduler = new SwapScheduler();
+    public void onInitializeClient() {
+        HudRenderCallback.EVENT.register(this::renderHud);
+    }
 
-        PayloadTypeRegistry.playS2C().register(TIMER_PACKET_ID, TimerPayload.CODEC);
+    private void renderHud(DrawContext context, RenderTickCounter tickCounter) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || !hudVisible) return;
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-            ChunkSwapCommand.register(dispatcher));
+        String text;
+        int color;
 
-        LOGGER.info("[ChunkSwap] Mod initialized!");
+        if (paused) {
+            text = "§7⏸ Paused";
+            color = 0xAAAAAA;
+        } else if (secondsRemaining <= 3) {
+            text = "§c⚡ " + secondsRemaining + "s";
+            color = 0xFF4444;
+        } else {
+            text = "§aChunk Swap: §f" + secondsRemaining + "s";
+            color = 0xFFFFFF;
+        }
+
+        int screenWidth = context.getScaledWindowWidth();
+        int textWidth = client.textRenderer.getWidth(text);
+        int x = (screenWidth - textWidth) / 2;
+        int y = context.getScaledWindowHeight() - 58; // just above hotbar
+
+        // Draw a subtle dark background pill
+        context.fill(x - 6, y - 3, x + textWidth + 6, y + 11, 0x55000000);
+        context.drawTextWithShadow(client.textRenderer, text, x, y, color);
     }
 }
