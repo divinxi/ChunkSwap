@@ -1,37 +1,52 @@
-name: Build ChunkSwap Mod
+plugins {
+    id 'fabric-loom' version '1.9-SNAPSHOT'
+}
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+version = '1.0.0'
+group = 'com.divinxxii'
+base {
+    archivesName = 'chunkswap'
+}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+repositories {
+}
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        chunkswap {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+dependencies {
+    minecraft "com.mojang:minecraft:1.21.4"
+    mappings "net.fabricmc:yarn:1.21.4+build.8:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.16.9"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.119.2+1.21.4"
+}
 
-      - name: Install Gradle
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
-          unzip -q gradle-8.7-bin.zip
-          echo "$PWD/gradle-8.7/bin" >> $GITHUB_PATH
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
 
-      - name: Build mod
-        run: gradle build
-        working-directory: ./chunkswap
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
 
-      - name: Upload JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: chunkswap-mod
-          path: chunkswap/build/libs/chunkswap-*.jar
-          if-no-files-found: error
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    from(sourceSets.main.output)
+    from(sourceSets.client.output)
+}
