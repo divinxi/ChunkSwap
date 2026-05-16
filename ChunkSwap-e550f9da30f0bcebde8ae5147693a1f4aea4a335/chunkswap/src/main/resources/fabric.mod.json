@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "chunkswap",
+  "version": "1.0.0",
+  "name": "ChunkSwap",
+  "description": "Random chunk swap challenge mod for Divinxxii.",
+  "authors": ["Divinxxii"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.divinxxii.chunkswap.ChunkSwapMod"],
+    "client": ["com.divinxxii.chunkswap.client.ChunkSwapClient"]
+  },
+  "mixins": [],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.4"
+  }
+}

@@ -1,0 +1,52 @@
+plugins {
+    id 'fabric-loom' version '1.6-SNAPSHOT'
+}
+
+version = '1.0.0'
+group = 'com.divinxxii'
+base {
+    archivesName = 'chunkswap'
+}
+
+repositories {
+}
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        chunkswap {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:1.21"
+    mappings "net.fabricmc:yarn:1.21+build.9:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.15.11"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:0.100.4+1.21"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    from(sourceSets.main.output)
+    from(sourceSets.client.output)
+}
